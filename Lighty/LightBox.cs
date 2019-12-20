@@ -272,12 +272,13 @@ namespace SourceChord.Lighty
         {
             var tcs = new TaskCompletionSource<bool>();
 
-            var closedHandler = new Action<FrameworkElement>((d) =>
+            var closedHandler = new Action<FrameworkElement>((d) => { });
+            closedHandler = new Action<FrameworkElement>((d) =>
             {
                 if (d == dialog)
                 {
                     tcs.SetResult(true);
-                    _closedDelegate = null;
+                    _closedDelegate -= closedHandler;
                 }
             });
             _closedDelegate += closedHandler;
