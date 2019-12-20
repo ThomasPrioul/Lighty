@@ -16,7 +16,7 @@ namespace SourceChord.Lighty
     /// </summary>
     public class LightBoxAdorner : Adorner
     {
-        public LightBox Root { get; private set; }
+        public LightBox? Root { get; private set; }
 
         public bool UseAdornedElementSize { get; set; }
 
@@ -26,50 +26,50 @@ namespace SourceChord.Lighty
 
         public LightBoxAdorner(UIElement adornedElement) : base(adornedElement)
         {
-            this.UseAdornedElementSize = true;
+            UseAdornedElementSize = true;
         }
 
         public void SetRoot(LightBox root)
         {
-            this.AddVisualChild(root);
-            this.Root = root;
+            AddVisualChild(root);
+            Root = root;
         }
 
-        protected override int VisualChildrenCount
-        {
-            get { return this.Root == null ? 0 : 1; }
-        }
+        protected override int VisualChildrenCount => Root == null ? 0 : 1;
 
-        protected override Visual GetVisualChild(int index)
+        protected override Visual? GetVisualChild(int index)
         {
             if (index != 0) throw new ArgumentOutOfRangeException();
-            return this.Root;
+            return Root;
         }
 
         protected override Size MeasureOverride(Size constraint)
         {
-            if (this.UseAdornedElementSize)
+            if (Root == null) return default;
+
+            if (UseAdornedElementSize)
             {
-                var size = this.AdornedElement.RenderSize;
-                this.Root.Width = size.Width;
-                this.Root.Height = size.Height;
-                this.Root.Measure(size);
+                var size = AdornedElement.RenderSize;
+                Root.Width = size.Width;
+                Root.Height = size.Height;
+                Root.Measure(size);
             }
             else
             {
                 // ルートのグリッドはAdornerを付けている要素と同じサイズになるように調整
-                this.Root.Width = constraint.Width;
-                this.Root.Height = constraint.Height;
-                this.Root.Measure(constraint);
+                Root.Width = constraint.Width;
+                Root.Height = constraint.Height;
+                Root.Measure(constraint);
             }
 
-            return this.Root.DesiredSize;
+            return Root.DesiredSize;
         }
 
         protected override Size ArrangeOverride(Size finalSize)
         {
-            this.Root.Arrange(new Rect(new Point(0, 0), finalSize));
-            return new Size(this.Root.ActualWidth, this.Root.ActualHeight);
+            if (Root == null) return default;
+            Root.Arrange(new Rect(new Point(0, 0), finalSize));
+            return new Size(Root.ActualWidth, Root.ActualHeight);
         }
     }
 }

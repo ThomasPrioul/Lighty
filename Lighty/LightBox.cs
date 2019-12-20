@@ -50,11 +50,11 @@ namespace SourceChord.Lighty
     /// </summary>
     public class LightBox : ItemsControl
     {
-        private Action<FrameworkElement> _closedDelegate;
+        Action<FrameworkElement>? _closedDelegate;
 
-        public EventHandler AllDialogClosed;
+        public EventHandler? AllDialogClosed;
 
-        public EventHandler CompleteInitializeLightBox;
+        public EventHandler? CompleteInitializeLightBox;
 
         static LightBox()
         {
@@ -104,17 +104,20 @@ namespace SourceChord.Lighty
         /// <param name="content"></param>
         public static void ShowDialog(UIElement owner, FrameworkElement content)
         {
-            var adorner = GetAdorner(owner);
-            if (adorner == null) { adorner = CreateAdornerModal(owner); }
+            var adorner = GetAdorner(owner) ?? CreateAdornerModal(owner);
+            if (adorner == null) throw new NullReferenceException("Adorner is null");
 
             var frame = new DispatcherFrame();
-            adorner.Root.AllDialogClosed += (s, e) => { frame.Continue = false; };
-            adorner.Root?.AddDialog(content);
+            if (adorner.Root != null)
+            {
+                adorner.Root.AllDialogClosed += (s, e) => { frame.Continue = false; };
+                adorner.Root?.AddDialog(content);
+            }
 
             Dispatcher.PushFrame(frame);
         }
 
-        protected static LightBoxAdorner GetAdorner(UIElement element)
+        protected static LightBoxAdorner? GetAdorner(UIElement element)
         {
             // Window系のクラスだったら、Contentプロパティを利用。それ以外の場合はそのまま利用。
             var win = element as Window;
@@ -131,7 +134,7 @@ namespace SourceChord.Lighty
             return current;
         }
 
-        private static LightBoxAdorner CreateAdornerCore(UIElement element, LightBox lightbox)
+        private static LightBoxAdorner? CreateAdornerCore(UIElement element, LightBox lightbox)
         {
             // Window系のクラスだったら、Contentプロパティを利用。それ以外の場合はそのまま利用。
             var win = element as Window;
@@ -148,7 +151,7 @@ namespace SourceChord.Lighty
             // Windowに対してAdornerを設定していた場合は、Content要素のMarginを打ち消すためのマージン設定を行う。
             if (win != null)
             {
-                var content = win.Content as FrameworkElement;
+                var content = (FrameworkElement)win.Content;
                 var margin = content.Margin;
                 adorner.Margin = new Thickness(-margin.Left, -margin.Top, margin.Right, margin.Bottom);
                 adorner.UseAdornedElementSize = false;
@@ -166,14 +169,14 @@ namespace SourceChord.Lighty
             return adorner;
         }
 
-        protected static LightBoxAdorner CreateAdorner(UIElement element)
+        protected static LightBoxAdorner? CreateAdorner(UIElement element)
         {
             return CreateAdornerCore(element, new LightBox());
         }
 
-        protected static Task<LightBoxAdorner> CreateAdornerAsync(UIElement element)
+        protected static Task<LightBoxAdorner?> CreateAdornerAsync(UIElement element)
         {
-            var tcs = new TaskCompletionSource<LightBoxAdorner>();
+            var tcs = new TaskCompletionSource<LightBoxAdorner?>();
 
             var lightbox = new LightBox();
             var adorner = CreateAdornerCore(element, lightbox);
@@ -199,7 +202,7 @@ namespace SourceChord.Lighty
             return tcs.Task;
         }
 
-        protected static LightBoxAdorner CreateAdornerModal(UIElement element)
+        protected static LightBoxAdorner? CreateAdornerModal(UIElement element)
         {
             var lightbox = new LightBox();
 
@@ -225,10 +228,10 @@ namespace SourceChord.Lighty
         /// <param name="dialog"></param>
         protected void AddDialog(FrameworkElement dialog)
         {
-            var animation = this.OpenStoryboard;
+            var animation = OpenStoryboard;
             dialog.Loaded += (sender, args) =>
             {
-                var container = this.ContainerFromElement(dialog) as FrameworkElement;
+                var container = (FrameworkElement)ContainerFromElement(dialog);
                 container.Focus();
 
                 // CloseOnClickBackgroundが有効な場合に、lightbox内のMouseLeftButtonDownイベントがバブルアップしないようにする。
@@ -246,65 +249,64 @@ namespace SourceChord.Lighty
             };
 
             // アイテムを追加
-            this.Items.Add(dialog);
+            Items.Add(dialog);
 
             // 追加したダイアログに対して、ApplicationCommands.Closeのコマンドに対するハンドラを設定。
             dialog.CommandBindings.Add(new CommandBinding(ApplicationCommands.Close, async (s, e) =>
             {
-                await this.RemoveDialogAsync(dialog);
+                await RemoveDialogAsync(dialog);
             }));
 
             // ItemsControlにもApplicationCommands.Closeのコマンドに対するハンドラを設定。
             // (ItemsContainerからもCloseコマンドを送って閉じられるようにするため。)
-            var parent = dialog.Parent as FrameworkElement;
+            var parent = (FrameworkElement)dialog.Parent;
             parent.CommandBindings.Add(new CommandBinding(ApplicationCommands.Close, async (s, e) =>
             {
-                await this.RemoveDialogAsync(e.Parameter as FrameworkElement);
+                await RemoveDialogAsync((FrameworkElement)e.Parameter);
             }));
 
-            this.InvalidateVisual();
+            InvalidateVisual();
         }
 
         protected async Task<bool> AddDialogAsync(FrameworkElement dialog)
         {
             var tcs = new TaskCompletionSource<bool>();
 
-            var closedHandler = new Action<FrameworkElement>((d) => { });
-            closedHandler = new Action<FrameworkElement>((d) =>
+            var closedHandler = new Action<FrameworkElement>((d) =>
             {
                 if (d == dialog)
                 {
                     tcs.SetResult(true);
-                    this._closedDelegate -= closedHandler;
+                    _closedDelegate = null;
                 }
             });
-            this._closedDelegate += closedHandler;
+            _closedDelegate += closedHandler;
 
-            this.AddDialog(dialog);
+            AddDialog(dialog);
 
             return await tcs.Task;
         }
 
         protected async Task RemoveDialogAsync(FrameworkElement dialog)
         {
-            var index = this.Items.IndexOf(dialog);
-            var count = this.Items.Count;
+            int index = Items.IndexOf(dialog);
+            int count = Items.Count;
 
-            if (this.IsParallelDispose)
+            if (IsParallelDispose)
             {
-                var _ = this.DestroyDialogAsync(dialog);
+                var _ = DestroyDialogAsync(dialog);
             }
             else
             {
-                await this.DestroyDialogAsync(dialog);
+                await DestroyDialogAsync(dialog);
             }
 
             if (index != -1 && count == 1)
             {
-                await this.DestroyAdornerAsync();
+                await DestroyAdornerAsync();
             }
 
-            this._closedDelegate?.Invoke(dialog);
+            _closedDelegate?.Invoke(dialog);
         }
         #endregion
 
@@ -315,37 +317,37 @@ namespace SourceChord.Lighty
         {
             base.OnApplyTemplate();
             // 背景クリックで、Adornerを削除する処理を追加
-            if (this.CloseOnClickBackground)
+            if (CloseOnClickBackground)
             {
-                this.MouseLeftButtonDown += (s, e) =>
+                MouseLeftButtonDown += (s, e) =>
                 {
                     foreach (FrameworkElement item in Items)
                         item.Close();
                 };
             }
-            await this.InitializeAdornerAsync();
+            await InitializeAdornerAsync();
         }
 
         protected async Task InitializeAdornerAsync()
         {
-            var animation = this.InitializeStoryboard;
+            var animation = InitializeStoryboard;
             await animation.BeginAsync(this);
-            this.CompleteInitializeLightBox?.Invoke(this, null);
+            CompleteInitializeLightBox?.Invoke(this, null);
         }
 
         protected async Task<bool> DestroyAdornerAsync()
         {
-            var ret = await this.DisposeStoryboard.BeginAsync(this);
+            bool ret = await DisposeStoryboard.BeginAsync(this);
             // このAdornerを消去するように依頼するイベントを発行する。
-            this.AllDialogClosed?.Invoke(this, null);
+            AllDialogClosed?.Invoke(this, null);
             return ret;
         }
 
         protected async Task<bool> DestroyDialogAsync(FrameworkElement item)
         {
-            var container = this.ContainerFromElement(item) as FrameworkElement;
-            await this.CloseStoryboard.BeginAsync(container);
-            this.Items.Remove(item);
+            var container = (FrameworkElement)ContainerFromElement(item);
+            await CloseStoryboard.BeginAsync(container);
+            Items.Remove(item);
             return true;
         }
 
