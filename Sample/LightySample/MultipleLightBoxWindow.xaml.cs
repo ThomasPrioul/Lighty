@@ -29,10 +29,10 @@ namespace LightySample
         {
             LightBox.Show(this, new SampleDialog());
 
-            await TaskEx.Delay(1000);
+            await Task.Delay(1000);
             LightBox.Show(this, new SampleDialog());
 
-            await TaskEx.Delay(1000);
+            await Task.Delay(1000);
             LightBox.Show(this, new SampleDialog());
         }
     }
