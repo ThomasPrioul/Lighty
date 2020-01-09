@@ -1,45 +1,73 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Storyboard x:Key="FadeInAnimation">
-        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1.0" Duration="00:00:00.5">
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Storyboard x:Key="FadeOutAnimation">
+        <DoubleAnimation
+            Storyboard.TargetProperty="Opacity"
+            From="1.0"
+            To="0"
+            Duration="00:00:00.5">
             <DoubleAnimation.EasingFunction>
                 <CubicEase EasingMode="EaseInOut" />
             </DoubleAnimation.EasingFunction>
         </DoubleAnimation>
     </Storyboard>
-    <Storyboard x:Key="FadeOutAnimation">
-        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1.0" To="0" Duration="00:00:00.5">
+    <Storyboard x:Key="FadeInAnimation">
+        <DoubleAnimation
+            Storyboard.TargetProperty="Opacity"
+            From="0"
+            To="1.0"
+            Duration="00:00:0">
             <DoubleAnimation.EasingFunction>
-                <CubicEase EasingMode="EaseInOut" />
+                <ExponentialEase EasingMode="EaseOut" />
             </DoubleAnimation.EasingFunction>
         </DoubleAnimation>
     </Storyboard>
     <Storyboard x:Key="ZoomInAnimation">
-        <DoubleAnimation Storyboard.TargetProperty="(RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)" From="0" To="1.0" Duration="00:00:00.5">
+        <DoubleAnimation
+            Storyboard.TargetProperty="(RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)"
+            From="0"
+            To="1.0"
+            Duration="00:00:0.25">
             <DoubleAnimation.EasingFunction>
-                <CubicEase EasingMode="EaseInOut" />
+                <BackEase Amplitude="0.3" EasingMode="EaseOut" />
             </DoubleAnimation.EasingFunction>
         </DoubleAnimation>
-        <DoubleAnimation Storyboard.TargetProperty="(RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)" From="0" To="1.0" Duration="00:00:00.5">
+        <DoubleAnimation
+            Storyboard.TargetProperty="(RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)"
+            From="0"
+            To="1.0"
+            Duration="00:00:0.25">
             <DoubleAnimation.EasingFunction>
-                <CubicEase EasingMode="EaseInOut" />
+                <BackEase Amplitude="0.3" EasingMode="EaseOut" />
             </DoubleAnimation.EasingFunction>
         </DoubleAnimation>
-        <!-- ↓中心点の変更をする場合 -->
-        <!--<PointAnimation Storyboard.TargetProperty="RenderTransformOrigin" To="0,0" Duration="00:00:00" />-->
     </Storyboard>
     <Storyboard x:Key="ZoomOutAnimation">
-        <DoubleAnimation Storyboard.TargetProperty="(RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)" From="1.0" To="0" Duration="00:00:00.5">
+        <DoubleAnimation
+            Storyboard.TargetProperty="(RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)"
+            From="1.0"
+            To="0"
+            Duration="00:00:0.25">
             <DoubleAnimation.EasingFunction>
-                <CubicEase EasingMode="EaseInOut" />
+                <BackEase Amplitude="0.3" EasingMode="EaseIn" />
             </DoubleAnimation.EasingFunction>
         </DoubleAnimation>
-        <DoubleAnimation Storyboard.TargetProperty="(RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)" From="1.0" To="0" Duration="00:00:00.5">
+        <DoubleAnimation
+            Storyboard.TargetProperty="(RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)"
+            From="1.0"
+            To="0"
+            Duration="00:00:0.25">
             <DoubleAnimation.EasingFunction>
-                <CubicEase EasingMode="EaseInOut" />
+                <BackEase Amplitude="0.3" EasingMode="EaseIn" />
             </DoubleAnimation.EasingFunction>
         </DoubleAnimation>
-        <!-- ↓中心点の変更をする場合 -->
-        <!--<PointAnimation Storyboard.TargetProperty="RenderTransformOrigin" To="0,0" Duration="00:00:00" />-->
+        <DoubleAnimation
+            Storyboard.TargetProperty="Opacity"
+            From="1.0"
+            To="0"
+            Duration="00:00:0.2">
+            <DoubleAnimation.EasingFunction>
+                <ExponentialEase EasingMode="EaseIn" />
+            </DoubleAnimation.EasingFunction>
+        </DoubleAnimation>
     </Storyboard>
 </ResourceDictionary>

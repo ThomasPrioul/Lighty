@@ -1,53 +1,17 @@
-﻿using SourceChord.Lighty.Common;
-using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Windows.Threading;
-
-namespace SourceChord.Lighty
+﻿namespace SourceChord.Lighty
 {
-    /// <summary>
-    /// このカスタム コントロールを XAML ファイルで使用するには、手順 1a または 1b の後、手順 2 に従います。
-    ///
-    /// 手順 1a) 現在のプロジェクトに存在する XAML ファイルでこのカスタム コントロールを使用する場合
-    /// この XmlNamespace 属性を使用場所であるマークアップ ファイルのルート要素に
-    /// 追加します:
-    ///
-    ///     xmlns:MyNamespace="clr-namespace:SourceChord.Lighty"
-    ///
-    ///
-    /// 手順 1b) 異なるプロジェクトに存在する XAML ファイルでこのカスタム コントロールを使用する場合
-    /// この XmlNamespace 属性を使用場所であるマークアップ ファイルのルート要素に
-    /// 追加します:
-    ///
-    ///     xmlns:MyNamespace="clr-namespace:SourceChord.Lighty;assembly=SourceChord.Lighty"
-    ///
-    /// また、XAML ファイルのあるプロジェクトからこのプロジェクトへのプロジェクト参照を追加し、
-    /// リビルドして、コンパイル エラーを防ぐ必要があります:
-    ///
-    ///     ソリューション エクスプローラーで対象のプロジェクトを右クリックし、
-    ///     [参照の追加] の [プロジェクト] を選択してから、このプロジェクトを参照し、選択します。
-    ///
-    ///
-    /// 手順 2)
-    /// コントロールを XAML ファイルで使用します。
-    ///
-    ///     <MyNamespace:LightBox/>
-    ///
-    /// </summary>
+    using SourceChord.Lighty.Common;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using System.Windows;
+    using System.Windows.Controls;
+    using System.Windows.Documents;
+    using System.Windows.Input;
+    using System.Windows.Media;
+    using System.Windows.Media.Animation;
+    using System.Windows.Threading;
+    
     public class LightBox : ItemsControl
     {
         Action<FrameworkElement>? _closedDelegate;
@@ -72,36 +36,22 @@ namespace SourceChord.Lighty
             return false;
         }
 
-        /// <summary>
-        /// LightBoxをモードレス表示します。
-        /// </summary>
-        /// <param name="owner"></param>
-        /// <param name="content"></param>
         public static async void Show(UIElement owner, FrameworkElement content)
         {
             var adorner = GetAdorner(owner);
             if (adorner == null) { adorner = await CreateAdornerAsync(owner); }
-            adorner.Root?.AddDialog(content);
+            adorner?.Root?.AddDialog(content);
         }
 
-        /// <summary>
-        /// LightBoxを非同期でモードレス表示します。
-        /// </summary>
-        /// <param name="owner"></param>
-        /// <param name="content"></param>
-        /// <returns></returns>
         public static async Task ShowAsync(UIElement owner, FrameworkElement content)
         {
             var adorner = GetAdorner(owner);
             if (adorner == null) { adorner = await CreateAdornerAsync(owner); }
-            await adorner.Root?.AddDialogAsync(content);
+
+            if (adorner?.Root != null)
+                await adorner.Root.AddDialogAsync(content);
         }
 
-        /// <summary>
-        /// LightBoxをモーダル表示します。
-        /// </summary>
-        /// <param name="owner"></param>
-        /// <param name="content"></param>
         public static void ShowDialog(UIElement owner, FrameworkElement content)
         {
             var adorner = GetAdorner(owner) ?? CreateAdornerModal(owner);
@@ -119,7 +69,6 @@ namespace SourceChord.Lighty
 
         protected static LightBoxAdorner? GetAdorner(UIElement element)
         {
-            // Window系のクラスだったら、Contentプロパティを利用。それ以外の場合はそのまま利用。
             var win = element as Window;
             var target = win?.Content as UIElement ?? element;
 
@@ -134,9 +83,8 @@ namespace SourceChord.Lighty
             return current;
         }
 
-        private static LightBoxAdorner? CreateAdornerCore(UIElement element, LightBox lightbox)
+        static LightBoxAdorner? CreateAdornerCore(UIElement element, LightBox lightbox)
         {
-            // Window系のクラスだったら、Contentプロパティを利用。それ以外の場合はそのまま利用。
             var win = element as Window;
             var target = win?.Content as UIElement ?? element;
 
@@ -144,11 +92,9 @@ namespace SourceChord.Lighty
             var layer = AdornerLayer.GetAdornerLayer(target);
             if (layer == null) return null;
 
-            // ダイアログ用のAdornerが存在してないので、新規に作って設定して返す。
             var adorner = new LightBoxAdorner(target);
             adorner.SetRoot(lightbox);
 
-            // Windowに対してAdornerを設定していた場合は、Content要素のMarginを打ち消すためのマージン設定を行う。
             if (win != null)
             {
                 var content = (FrameworkElement)win.Content;
@@ -157,13 +103,12 @@ namespace SourceChord.Lighty
                 adorner.UseAdornedElementSize = false;
             }
 
-            // ダイアログ表示時にtargetがEnableだった場合、ダイアログ表示中だけDisable化する。
             if (target.IsEnabled)
             {
                 target.IsEnabled = false;
                 lightbox.AllDialogClosed += (s, e) => { target.IsEnabled = true; };
             }
-            // すべてのダイアログがクリアされたときに、Adornerを削除するための処理を追加
+
             lightbox.AllDialogClosed += (s, e) => { layer?.Remove(adorner); };
             layer.Add(adorner);
             return adorner;
@@ -182,11 +127,7 @@ namespace SourceChord.Lighty
             var adorner = CreateAdornerCore(element, lightbox);
             lightbox.Loaded += (s, e) =>
             {
-                // アニメーションを並列で実行する場合 or 
-                // lightbox背景のアニメーションが無い場合は、
-                // この非同期メソッドは即完了とする
-                if (lightbox.IsParallelInitialize ||
-                    lightbox.InitializeStoryboard == null)
+                if (lightbox.IsParallelInitialize || lightbox.InitializeStoryboard == null)
                 {
                     tcs.SetResult(adorner);
                 }
@@ -221,11 +162,6 @@ namespace SourceChord.Lighty
             return adorner;
         }
 
-        #region ダイアログ表示関係の処理
-        /// <summary>
-        /// 引数で渡されたFrameworkElementを、表示中のダイアログ項目に追加します。
-        /// </summary>
-        /// <param name="dialog"></param>
         protected void AddDialog(FrameworkElement dialog)
         {
             var animation = OpenStoryboard;
@@ -234,7 +170,6 @@ namespace SourceChord.Lighty
                 var container = (FrameworkElement)ContainerFromElement(dialog);
                 container.Focus();
 
-                // CloseOnClickBackgroundが有効な場合に、lightbox内のMouseLeftButtonDownイベントがバブルアップしないようにする。
                 container.MouseLeftButtonDown += (s, e) => { e.Handled = true; };
 
                 var transform = new TransformGroup();
@@ -248,17 +183,13 @@ namespace SourceChord.Lighty
                 animation?.BeginAsync(container);
             };
 
-            // アイテムを追加
             Items.Add(dialog);
 
-            // 追加したダイアログに対して、ApplicationCommands.Closeのコマンドに対するハンドラを設定。
             dialog.CommandBindings.Add(new CommandBinding(ApplicationCommands.Close, async (s, e) =>
             {
                 await RemoveDialogAsync(dialog);
             }));
 
-            // ItemsControlにもApplicationCommands.Closeのコマンドに対するハンドラを設定。
-            // (ItemsContainerからもCloseコマンドを送って閉じられるようにするため。)
             var parent = (FrameworkElement)dialog.Parent;
             parent.CommandBindings.Add(new CommandBinding(ApplicationCommands.Close, async (s, e) =>
             {
@@ -309,15 +240,11 @@ namespace SourceChord.Lighty
 
             _closedDelegate?.Invoke(dialog);
         }
-        #endregion
-
-
-        #region アニメーション関係のStoryboardを実行するための各種メソッド
 
         public override async void OnApplyTemplate()
         {
             base.OnApplyTemplate();
-            // 背景クリックで、Adornerを削除する処理を追加
+
             if (CloseOnClickBackground)
             {
                 MouseLeftButtonDown += (s, e) =>
@@ -339,7 +266,6 @@ namespace SourceChord.Lighty
         protected async Task<bool> DestroyAdornerAsync()
         {
             bool ret = await DisposeStoryboard.BeginAsync(this);
-            // このAdornerを消去するように依頼するイベントを発行する。
             AllDialogClosed?.Invoke(this, null);
             return ret;
         }
@@ -352,82 +278,67 @@ namespace SourceChord.Lighty
             return true;
         }
 
-        #endregion
-
-        #region アニメーション関係のプロパティ
-
         public bool IsParallelInitialize
         {
-            get { return (bool)GetValue(IsParallelInitializeProperty); }
-            set { SetValue(IsParallelInitializeProperty, value); }
+            get => (bool)GetValue(IsParallelInitializeProperty);
+            set => SetValue(IsParallelInitializeProperty, value);
         }
-        // Using a DependencyProperty as the backing store for IsParallelInitialize.  This enables animation, styling, binding, etc...
+
         public static readonly DependencyProperty IsParallelInitializeProperty =
             DependencyProperty.Register("IsParallelInitialize", typeof(bool), typeof(LightBox), new PropertyMetadata(false));
 
-
         public bool IsParallelDispose
         {
-            get { return (bool)GetValue(IsParallelDisposeProperty); }
-            set { SetValue(IsParallelDisposeProperty, value); }
+            get => (bool)GetValue(IsParallelDisposeProperty);
+            set => SetValue(IsParallelDisposeProperty, value);
         }
-        // Using a DependencyProperty as the backing store for IsParallelDispose.  This enables animation, styling, binding, etc...
+
         public static readonly DependencyProperty IsParallelDisposeProperty =
             DependencyProperty.Register("IsParallelDispose", typeof(bool), typeof(LightBox), new PropertyMetadata(false));
 
-
         public Storyboard OpenStoryboard
         {
-            get { return (Storyboard)GetValue(OpenStoryboardProperty); }
-            set { SetValue(OpenStoryboardProperty, value); }
+            get => (Storyboard)GetValue(OpenStoryboardProperty);
+            set => SetValue(OpenStoryboardProperty, value);
         }
-        // Using a DependencyProperty as the backing store for OpenStoryboard.  This enables animation, styling, binding, etc...
+
         public static readonly DependencyProperty OpenStoryboardProperty =
             DependencyProperty.Register("OpenStoryboard", typeof(Storyboard), typeof(LightBox), new PropertyMetadata(null));
 
-
         public Storyboard CloseStoryboard
         {
-            get { return (Storyboard)GetValue(CloseStoryboardProperty); }
-            set { SetValue(CloseStoryboardProperty, value); }
+            get => (Storyboard)GetValue(CloseStoryboardProperty);
+            set => SetValue(CloseStoryboardProperty, value);
         }
-        // Using a DependencyProperty as the backing store for CloseStoryboard.  This enables animation, styling, binding, etc...
+
         public static readonly DependencyProperty CloseStoryboardProperty =
             DependencyProperty.Register("CloseStoryboard", typeof(Storyboard), typeof(LightBox), new PropertyMetadata(null));
 
-
         public Storyboard InitializeStoryboard
         {
-            get { return (Storyboard)GetValue(InitializeStoryboardProperty); }
-            set { SetValue(InitializeStoryboardProperty, value); }
+            get => (Storyboard)GetValue(InitializeStoryboardProperty);
+            set => SetValue(InitializeStoryboardProperty, value);
         }
-        // Using a DependencyProperty as the backing store for InitializeStoryboard.  This enables animation, styling, binding, etc...
+
         public static readonly DependencyProperty InitializeStoryboardProperty =
             DependencyProperty.Register("InitializeStoryboard", typeof(Storyboard), typeof(LightBox), new PropertyMetadata(null));
 
-
         public Storyboard DisposeStoryboard
         {
-            get { return (Storyboard)GetValue(DisposeStoryboardProperty); }
-            set { SetValue(DisposeStoryboardProperty, value); }
+            get => (Storyboard)GetValue(DisposeStoryboardProperty);
+            set => SetValue(DisposeStoryboardProperty, value);
         }
-        // Using a DependencyProperty as the backing store for DisposeStoryboard.  This enables animation, styling, binding, etc...
+
         public static readonly DependencyProperty DisposeStoryboardProperty =
             DependencyProperty.Register("DisposeStoryboard", typeof(Storyboard), typeof(LightBox), new PropertyMetadata(null));
 
-
-
         public bool CloseOnClickBackground
         {
-            get { return (bool)GetValue(CloseOnClickBackgroundProperty); }
-            set { SetValue(CloseOnClickBackgroundProperty, value); }
+            get => (bool)GetValue(CloseOnClickBackgroundProperty);
+            set => SetValue(CloseOnClickBackgroundProperty, value);
         }
-        // Using a DependencyProperty as the backing store for CloseOnClickBackground.  This enables animation, styling, binding, etc...
+
         public static readonly DependencyProperty CloseOnClickBackgroundProperty =
             DependencyProperty.Register("CloseOnClickBackground", typeof(bool), typeof(LightBox), new PropertyMetadata(true));
-
-
-
-        #endregion
     }
 }
